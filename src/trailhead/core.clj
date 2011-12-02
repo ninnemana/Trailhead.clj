@@ -6,48 +6,11 @@
         [hiccup.core         :only [h html]]
         [hiccup.page-helpers :only [doctype include-css link-to xhtml-tag]]
         [hiccup.form-helpers :only [form-to text-area text-field]])
+  (:use postal.core)
   (:import (com.google.appengine.api.datastore Query))
   (:require [compojure.route          :as route]
             [appengine.datastore.core :as ds]
             [appengine.users          :as users]))
-
-(defn mail [& m]
-  (let [mail (apply hash-map m)
-        props (java.util.Properties.)]
-
-    (doto props
-      (.put "mail.smtp.host" (:host mail))
-      (.put "mail.smtp.port" (:port mail))
-      (.put "mail.smtp.user" (:user mail))
-      (.put "mail.smtp.socketFactory.port"  (:port mail))
-      (.put "mail.smtp.auth" "true"))
-
-    (if (= (:ssl mail) true)
-      (doto props
-        (.put "mail.smtp.starttls.enable" "true")
-        (.put "mail.smtp.socketFactory.class" 
-              "javax.net.ssl.SSLSocketFactory")
-        (.put "mail.smtp.socketFactory.fallback" "false")))
-
-    (let [authenticator (proxy [javax.mail.Authenticator] [] 
-                          (getPasswordAuthentication 
-                            []
-                            (javax.mail.PasswordAuthentication. 
-                             (:user mail) (:password mail))))
-          recipients (reduce #(str % "," %2) (:to mail))
-          session (javax.mail.Session/getInstance props authenticator)
-          msg     (javax.mail.internet.MimeMessage. session)]
-      
-      (.setFrom msg (javax.mail.internet.InternetAddress. (:user mail)))
-      
-      (.setRecipients msg 
-                      (javax.mail.Message$RecipientType/TO)
-                      (javax.mail.internet.InternetAddress/parse recipients))
-      
-      (.setSubject msg (:subject mail))
-      (.setText msg (:text mail))
-      (javax.mail.Transport/send msg))))
-
 
 (def home-page
   (html
@@ -79,13 +42,10 @@
 ))
 
 (def idea
-	(mail :user "ninnemana@gmail.com" :password "D3fj@m84"
-	      :host "smtp.gmail.com"
-	      :port 465
-      	      :ssl true
-      :to ["alex@ninneman.org" ]
-      :subject "I Have Rebooted." 
-      :text "I Have Rebooted.")
+    (send-message {:from "ninnemana@gmail.com"
+                    :to ["alex@ninneman.org"]
+                    :subject "Hi!"
+                    :body "Test."})
 )
 
 (defroutes example
